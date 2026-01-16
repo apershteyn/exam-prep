@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SitecoreAI Exam Prep</title>
+    <style>
+        :root { --sitecore-red: #ee3524; --dark: #2b2b2b; --success: #28a745; --error: #dc3545; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        h1 { color: var(--sitecore-red); text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        
+        .setup-box { background: #fff5f5; border: 2px dashed var(--sitecore-red); padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; padding: 10px; font-family: monospace; font-size: 12px; box-sizing: border-box; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card-btn { border: 2px solid #eee; padding: 25px; border-radius: 10px; cursor: pointer; text-align: center; transition: 0.3s; background: white; }
+        .card-btn:hover { border-color: var(--sitecore-red); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .card-btn h3 { margin: 0 0 10px 0; color: var(--sitecore-red); }
+
+        #stats-bar { display: flex; justify-content: space-between; position: sticky; top: 0; background: white; padding: 15px 25px; border-bottom: 4px solid var(--sitecore-red); z-index: 100; align-items: center; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .timer { font-weight: bold; color: var(--error); font-size: 1.4rem; }
+        
+        .q-card { margin-bottom: 30px; padding: 25px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+        .q-text { font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; color: #1a202c; }
+        .opt-item { padding: 14px 18px; margin: 8px 0; border: 2px solid #edf2f7; border-radius: 8px; cursor: pointer; transition: 0.2s; background: #fff; }
+        .opt-item:hover:not(.disabled) { background: #f7fafc; border-color: #cbd5e0; }
+        .opt-item.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt-item.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        .disabled { cursor: default; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 40px 0; }
+        button { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: var(--sitecore-red); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--sitecore-red); color: var(--sitecore-red); }
+        .hidden { display: none !important; }
+
+        #results-screen { text-align: center; }
+        .score-display { font-size: 5rem; font-weight: 900; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen">
+        <h1>SitecoreAI Exam Prep</h1>
+        <p class="subtitle" id="db-status">Please import your questions below.</p>
+        
+        <div class="setup-box">
+            <strong>Import JSON Data - (use questions from <a href="https://streza.dev/sitecore-xm-cloud-practice-exam/data.json">https://streza.dev/sitecore-xm-cloud-practice-exam/data.json</a>) and/or other sources:</strong><br>
+			<p>Question Format:<br>
+			<pre>
+{
+  "questions": [
+    {
+      "question": "What architecture does Sitecore XM Cloud utilize?",
+      "options": {
+        "A": "Monolithic",
+        "B": "Hybrid SaaS CMS with Headless Architecture",
+        "C": "Traditional CMS",
+        "D": "WYSIWYG"
+      },
+      "answer": "B"
+    },
+    {
+      "question": "Which of the following is NOT a component of the XM Cloud Developer Workflow?",
+      "options": {
+        "A": "Build and Deploy Services through CLI or Deploy App",
+        "B": "Authoring on the CM Instance with the Editing Host",
+        "C": "Manual Deployment via FTP",
+        "D": "Content Delivery using Edge"
+      },
+      "answer": "C"
+    }
+  ]
+}</pre>
+			</p>
+			
+            <textarea id="json-input" placeholder='Paste JSON here...'></textarea>
+            <button class="btn-primary" onclick="importJson()">Import & Save Data</button>
+            <button class="btn-outline" onclick="resetData()" style="float:right; border-color:#ccc; color:#666;">Clear Storage</button>
+        </div>
+
+        <div class="menu-grid">
+            <div class="card-btn" onclick="start('all')">
+                <h3>Study All Mode</h3>
+                <p>All available questions.<br><strong>(50 per page / Submittable)</strong></p>
+            </div>
+            <div class="card-btn" onclick="start('test')">
+                <h3>Practice Test</h3>
+                <p>50 random questions.<br><strong>(100 min timer)</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div id="stats-bar">
+            <div id="mode-label" style="font-weight:800; text-transform:uppercase;">MODE</div>
+            <div id="progress-text">Question 1 of 50</div>
+            <div id="timer-box" class="timer">100:00</div>
+        </div>
+        <div id="questions-container"></div>
+        <div class="pagination">
+            <button id="prev-btn" class="btn-outline" onclick="changePage(-1)">Previous 50</button>
+            <button id="next-btn" class="btn-outline" onclick="changePage(1)">Next 50</button>
+            <span style="color: #ccc; margin: 0 10px;">|</span>
+            <button id="submit-btn" class="btn-primary" onclick="finishExam()">Submit Final Exam</button>
+        </div>
+    </div>
+
+    <div id="results-screen" class="hidden">
+        <h1>Exam Results</h1>
+        <div id="final-score" class="score-display">0%</div>
+        <h2 id="final-status">FAIL</h2>
+        <p id="stats-summary"></p>
+        <button class="btn-primary" onclick="location.reload()">Back to Home</button>
+    </div>
+</div>
+
+<script>
+    let masterData = [];
+    let currentQuestions = [];
+    let answers = {};
+    let mode = 'all';
+    let currentPage = 0;
+    const pageSize = 50;
+    let timer;
+    let timeRemaining = 100 * 60;
+
+    window.onload = () => {
+        const saved = localStorage.getItem('sitecore_master_exam_v4');
+        if (saved) {
+            masterData = JSON.parse(saved);
+            document.getElementById('db-status').innerText = `✅ Loaded ${masterData.length} questions from memory.`;
+        }
+    };
+
+    function importJson() {
+        const input = document.getElementById('json-input').value.trim();
+        if (!input) return;
+
+        try {
+            const data = JSON.parse(input);
+            const rawList = Array.isArray(data) ? data : (data.questions || []);
+            
+            const cleanData = rawList.map(item => {
+                let optionsArray = [];
+                let correctAnswerText = "";
+
+                if (item.options && typeof item.options === 'object' && !Array.isArray(item.options)) {
+                    optionsArray = Object.values(item.options);
+                    correctAnswerText = item.options[item.answer] || item.answer;
+                } else {
+                    optionsArray = item.options || [];
+                    correctAnswerText = item.answer || "";
+                }
+
+                return {
+                    question: item.question,
+                    options: optionsArray,
+                    answer: correctAnswerText
+                };
+            }).filter(q => q.question && q.options.length > 0);
+
+            masterData = cleanData;
+            localStorage.setItem('sitecore_master_exam_v4', JSON.stringify(masterData));
+            alert(`Imported ${masterData.length} questions successfully!`);
+            location.reload();
+        } catch (e) {
+            alert("Error parsing JSON: " + e.message);
+        }
+    }
+
+    function start(m) {
+        if (masterData.length === 0) return alert("Please import data first.");
+        mode = m;
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+
+        // Always randomize the questions initially
+        let pool = [...masterData].sort(() => Math.random() - 0.5);
+
+        if (mode === 'test') {
+            currentQuestions = pool.slice(0, 50);
+            document.getElementById('mode-label').innerText = "PRACTICE TEST";
+            document.getElementById('timer-box').classList.remove('hidden');
+            document.getElementById('prev-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            runTimer();
+        } else {
+            currentQuestions = pool;
+            document.getElementById('mode-label').innerText = "STUDY ALL MODE";
+            document.getElementById('timer-box').classList.add('hidden');
+            document.getElementById('prev-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+        render();
+    }
+
+    function render() {
+        const container = document.getElementById('questions-container');
+        container.innerHTML = '';
+
+        const startIdx = (mode === 'test') ? 0 : currentPage * pageSize;
+        const endIdx = (mode === 'test') ? currentQuestions.length : Math.min(startIdx + pageSize, currentQuestions.length);
+
+        document.getElementById('progress-text').innerText = `Displaying ${startIdx + 1} - ${endIdx} of ${currentQuestions.length}`;
+
+        for (let i = startIdx; i < endIdx; i++) {
+            const q = currentQuestions[i];
+            const card = document.createElement('div');
+            card.className = 'q-card';
+            card.innerHTML = `
+                <div class="q-text">${i + 1}. ${q.question}</div>
+                <div class="opt-list" id="q-${i}">
+                    ${q.options.map(opt => {
+                        let cls = answers[i] ? 'disabled' : '';
+                        if (answers[i]) {
+                            if (opt === q.answer) cls += ' correct';
+                            else if (opt === answers[i].pick && !answers[i].isCorrect) cls += ' wrong';
+                        }
+                        return `<div class="opt-item ${cls}" onclick="check(${i}, '${opt.replace(/'/g, "\\'")}', this)">${opt}</div>`;
+                    }).join('')}
+                </div>
+            `;
+            container.appendChild(card);
+        }
+        
+        if (mode !== 'test') {
+            document.getElementById('prev-btn').disabled = currentPage === 0;
+            document.getElementById('next-btn').disabled = endIdx >= currentQuestions.length;
+        }
+        window.scrollTo(0, 0);
+    }
+
+    function check(idx, pick, el) {
+        if (answers[idx]) return;
+        const isCorrect = pick === currentQuestions[idx].answer;
+        answers[idx] = { pick, isCorrect };
+
+        const items = document.getElementById(`q-${idx}`).querySelectorAll('.opt-item');
+        items.forEach(item => {
+            item.classList.add('disabled');
+            if (item.innerText.trim() === currentQuestions[idx].answer.trim()) item.classList.add('correct');
+            else if (item === el && !isCorrect) item.classList.add('wrong');
+        });
+    }
+
+    function changePage(dir) {
+        currentPage += dir;
+        render();
+    }
+
+    function runTimer() {
+        timer = setInterval(() => {
+            timeRemaining--;
+            let m = Math.floor(timeRemaining / 60);
+            let s = timeRemaining % 60;
+            document.getElementById('timer-box').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (timeRemaining <= 0) finishExam();
+        }, 1000);
+    }
+
+    function finishExam() {
+        if(!confirm("Are you sure you want to submit and see your final score?")) return;
+        
+        clearInterval(timer);
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('results-screen').classList.remove('hidden');
+
+        const total = currentQuestions.length;
+        const correct = Object.values(answers).filter(a => a.isCorrect).length;
+        const pct = Math.round((correct / total) * 100);
+
+        const scoreEl = document.getElementById('final-score');
+        scoreEl.innerText = pct + "%";
+        scoreEl.style.color = pct >= 80 ? 'var(--success)' : 'var(--error)';
+        document.getElementById('final-status').innerText = pct >= 80 ? "PASS" : "FAIL";
+        document.getElementById('stats-summary').innerText = `You correctly answered ${correct} out of ${total} total questions.`;
+    }
+
+    function resetData() {
+        if(confirm("This will clear all saved questions. Continue?")) {
+            localStorage.removeItem('sitecore_master_exam_v4');
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>
