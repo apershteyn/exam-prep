@@ -1123,10 +1123,10 @@
     {
       "question": "What property must be added to make non-SXA sites linkable in Sitecore XM Cloud?",
       "options": {
-        "A": "linkableSite=\"true\"",
-        "B": "sxaLinkable=\"false\"",
-        "C": "sxaLinkable=\"true\"",
-        "D": "enableLinking=\"true\""
+        "A": "linkableSite='true'",
+        "B": "sxaLinkable='false'",
+        "C": "sxaLinkable='true'",
+        "D": "enableLinking='true'"
       },
       "answer": "C"
     },
@@ -2991,4 +2991,5 @@
       "answer": "C"
     }
   ]
+
 }
